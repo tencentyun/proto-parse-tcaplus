@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/emicklei/proto"
+	"github.com/tencentyun/proto-parse-tcaplus/tools"
 )
 
 const protoSuffix = ".proto"

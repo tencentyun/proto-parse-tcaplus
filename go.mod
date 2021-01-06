@@ -1,4 +1,4 @@
-module proto-parse
+module github.com/tencentyun/proto-parse-tcaplus
 
 go 1.15
 
