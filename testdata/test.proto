@@ -1,0 +1,56 @@
+syntax = "proto3";
+//import note
+import "gopkg.in/src-d/proteus.v1";
+//import pkg2
+import "google/protobuf/proto";
+
+
+//identify package test
+package test;
+
+//define option
+option(go.package) = "github.com/tencentyun/pb/proto-parse"
+
+//comment:GoodEnum
+enum GoodEnum {
+    reserved 2,3,5 to 10; //field id reserved
+    reserved "four","five"; //field name reserved
+     option allow_alias = true;
+    GOOD_VALUE_ONE = 11 [(name) = "one", (singleCharCode) = 2];
+    GOOD_VALUE_TWO = 1 [(custom_map_options) = { personal: true internal: false, owner: "some owner" }, (custom_arr_options) = [4,5,6] ];
+    GOOD_VALUE_THREE =1 [(custom_map_arr_options)={float:[1.1,2.2,3.3], a:"2"}] ;
+}
+//comment:bad_enum
+//comment2:bad_enum
+enum bad_enum {
+    bad_value_one = 0;
+    BadValueTwo = 1;
+}
+message SubMessage {
+    bool sub_field_one=1;
+    string sub_field_two = 2;
+}
+//comment:GoodMessage
+//comment 2: GoodMessage
+message GoodMessage {
+
+    bool good_field_one = 1;
+    int32 good_field_two = 2;
+    enum GoodNestedEnum {
+        nest_value_one = 0;
+        nest_value_two = 1;
+    }
+
+    message GoodNestedMessage {
+        bool good_field_one = 1;
+        int32 good_field_two = 2;
+    }
+    GoodNestedEnum nest_enum = 3;
+    GoodNestedMessage nest_msg = 4;
+    map<string,GoodNestedMessage> map_msg = 5 [(custom_option) = {first:true, second:false, three:"unknown"}];
+    oneof OneofMessage {
+        bool oneof_field_one = 6;
+        string oneof_field_two = 7;
+    }
+    SubMessage sub_message=8;
+}

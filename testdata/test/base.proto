@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package entity;
+
+import "google/protobuf/descriptor.proto";
+
+
+message BaseAccounts {
+    EntityType 	dType       = 1; //实体类型
+    string token                = 2; //玩家登陆Token
+    UserRoleInfo roleInfo       	= 3; //账号角色列表
+    UserAccountInfo accountInfo 		= 4; //账号额外信息
+}
+
+message UserRoleInfo {
+    EntityType 	dType       = 1; //实体类型
+    string name			= 2;
+}
+
+message UserAccountInfo {
+    EntityType 	dType       = 1; //实体类型
+    uint64 id			= 2;
+}

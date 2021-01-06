@@ -1,0 +1,30 @@
+syntax = "proto3";
+import "proto/entity/common.proto";
+import "proto/entity/enumm_entity.proto";
+
+package entity;
+
+//battle pass entity
+message OUT_BattlePass {
+    EntityType dType =1;
+    uint64 UUID = 2;
+    uint32 id = 3;
+    bool isBuyAdvance = 4;
+    uint32 exp = 5;
+    uint32 rewardLevel = 6;
+    uint32 mailLevel = 7;
+    BattlePassTaskList taskList = 8;
+    uint32 dailyResetTime = 9;
+    uint32 weekResetTime = 10;
+    uint32 activityId = 11;
+    uint32 advanceRewardLevel = 12;
+    uint32 funcId = 13;
+    uint32 startTime=14;
+    uint32 expiredTime=15;
+    DATA_MAP_UINT32 rewardStatus = 16;
+    DATA_MAP_UINT32 advanceRewardStatus = 17;
+}
+
+message BattlePassTaskList {
+    map<uint32, BattlePassTaskInfo> taskInfo = 1;
+}

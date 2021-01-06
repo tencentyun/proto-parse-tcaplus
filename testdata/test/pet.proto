@@ -1,0 +1,17 @@
+syntax = "proto3";
+import "proto/entity/common.proto";
+import "proto/entity/enumm_entity.proto";
+
+package entity;
+// 宠物实体信息
+message OUT_Pet {
+	EntityType 	dType = 1;  //实体类型
+	uint64 UUID       = 2; //实体唯一UUID
+	uint32 id         = 3; //宠物id
+	uint32 level      = 4; //宠物等级
+	uint32 exp        = 5; //宠物经验
+	uint32 showID     = 6; // 展示id
+	uint32 skillID    = 7; //最新的技能id
+	uint32 buffID     = 8; //最新的buffID
+	PetList list      = 9; //宠物激活列表
+}
