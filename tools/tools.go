@@ -5,12 +5,13 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"unicode"
 )
 
 const protoSuffix = ".proto"
 
-func createDir(path string) error {
+func CreateDir(path string) error {
 	fi, err := os.Stat(path)
 
 	if os.IsNotExist(err) {
@@ -24,7 +25,7 @@ func createDir(path string) error {
 	}
 	return nil
 }
-func createFile(path string, filename string) (string, error) {
+func CreateFile(path string, filename string) (string, error) {
 	fi, err := os.Stat(path)
 
 	if os.IsNotExist(err) {
@@ -41,7 +42,7 @@ func createFile(path string, filename string) (string, error) {
 	return file, nil
 }
 
-func writeFile(file string, data []byte) error {
+func WriteFile(file string, data []byte) error {
 
 	if err := ioutil.WriteFile(file, data, 0744); err != nil {
 		return err
@@ -50,7 +51,7 @@ func writeFile(file string, data []byte) error {
 	fmt.Printf("Generated proto: %s\n", file)
 	return nil
 }
-func checkFile(path string) error {
+func CheckFile(path string) error {
 	_, err := os.Stat(path)
 
 	if os.IsNotExist(err) {
@@ -79,4 +80,46 @@ func SnakeCase(str string) string {
 		out = append(out, r)
 	}
 	return string(out)
+}
+
+//traverse proto files of specified directory
+func GetProtoFiles(root string, ignores string) ([]string, error) {
+	protoFiles := []string{}
+
+	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// if not a .proto file, do not attempt to parse.
+		if !strings.HasSuffix(info.Name(), ".proto") {
+			return nil
+		}
+
+		// skip to next if is a directory
+		if info.IsDir() {
+			return nil
+		}
+
+		// skip if path is within an ignored path
+		if ignores != "" {
+			for _, ignore := range strings.Split(ignores, ",") {
+				rel, err := filepath.Rel(filepath.Join(root, ignore), path)
+				if err != nil {
+					return nil
+				}
+
+				if !strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
+					return nil
+				}
+			}
+		}
+		protoFiles = append(protoFiles, path)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return protoFiles, nil
 }

@@ -13,12 +13,12 @@ import (
 	"github.com/tencentyun/proto-parse-tcaplus/tools"
 )
 
-const protoSuffix = ".proto"
-
 //global variables
 var (
 	buf bytes.Buffer
 )
+
+const protoSuffix string = ".proto"
 
 func getProtoFiles(root string, ignores string) ([]string, error) {
 	protoFiles := []string{}
@@ -91,7 +91,7 @@ func parse(protoSrcFile string, protoDstPath string) {
 		proto.WithEnum(handleEnum),
 		proto.WithMessage(handleMessage),
 	)
-	err := tools.writeFile(protoDstPath, buf.Bytes())
+	err := tools.WriteFile(protoDstPath, buf.Bytes())
 	if err != nil {
 		fmt.Println(err)
 		return
