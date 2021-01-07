@@ -9,6 +9,7 @@ import (
 	"gopkg.in/ini.v1"
 )
 
+//read ini config file
 func ReadIni(iniFile string) (*ini.File, error) {
 
 	if _, err := os.Stat(iniFile); os.IsNotExist(err) {
@@ -22,6 +23,7 @@ func ReadIni(iniFile string) (*ini.File, error) {
 
 }
 
+//parse ini config file
 func ParseCfg(cfg *ini.File) error {
 	if cfg == nil {
 		fmt.Println("cfg is nil")
@@ -32,7 +34,7 @@ func ParseCfg(cfg *ini.File) error {
 		return err
 	}
 
-	//init map object
+	//init map object to avoid invalid address error
 	comm.FixTableMap = make(map[string]string)
 	comm.BlobFiles = make(map[string]string)
 
@@ -49,11 +51,13 @@ func ParseCfg(cfg *ini.File) error {
 		comm.FixTables = append(comm.FixTables, comm.GlobalFixTables[:]...)
 	}
 	if ok := busSec.HasKey("base_table_primary_keys"); ok {
+		//parse base table primary keys
 		baseTablePrimaryKeys := strings.Split(busSec.Key("base_table_primary_keys").Value(), ",")
 		for i := range baseTablePrimaryKeys {
 			baseTablePrimaryKeys[i] = strings.TrimSpace(baseTablePrimaryKeys[i])
 			infos := strings.Split(baseTablePrimaryKeys[i], ":")
 			for j := range infos {
+				//trim space to avoid illegal config item
 				infos[j] = strings.TrimSpace(infos[j])
 			}
 			tableName := infos[0]
@@ -68,11 +72,12 @@ func ParseCfg(cfg *ini.File) error {
 			}
 		}
 	} else {
+		//if no config item , assign default value
 		comm.FixTableMap = comm.GlobalFixTableMap
 	}
 
 	if ok := busSec.HasKey("blob_proto_files"); ok {
-
+		//parse config , get blob proto files
 		blobProtoFiles := strings.Split(busSec.Key("blob_proto_files").Value(), ",")
 		for i := range blobProtoFiles {
 			blobProtoFiles[i] = strings.TrimSpace(blobProtoFiles[i])
@@ -135,9 +140,11 @@ func ParseCfg(cfg *ini.File) error {
 		if len(ignores) > 0 {
 			comm.IgnoreImportPaths = append(comm.IgnoreImportPaths, ignores[:]...)
 		} else {
+			//empty item in config file, assign default value
 			comm.IgnoreImportPaths = append(comm.IgnoreImportPaths, comm.GlobalIgnoreImportPaths[:]...)
 		}
 	} else {
+		//no item in config file, assign default value
 		comm.IgnoreImportPaths = append(comm.IgnoreImportPaths, comm.GlobalIgnoreImportPaths[:]...)
 	}
 

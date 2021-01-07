@@ -104,7 +104,8 @@ func GetProtoFiles(root string, ignores string) ([]string, error) {
 		// skip if path is within an ignored path
 		if ignores != "" {
 			for _, ignore := range strings.Split(ignores, ",") {
-				rel, err := filepath.Rel(filepath.Join(root, ignore), path)
+				newIgnore := strings.TrimSpace(ignore)
+				rel, err := filepath.Rel(filepath.Join(root, newIgnore), path)
 				if err != nil {
 					return nil
 				}

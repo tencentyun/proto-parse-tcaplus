@@ -26,3 +26,9 @@ enum EntityType {
 
 	ET_PUB_LadderWarmUp               = 10056;
 }
+
+enum ComEnum {
+	FieldA = 1;
+	FieldB = 2;
+	FieldC =3 ;
+}

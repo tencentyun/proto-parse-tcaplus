@@ -13,14 +13,6 @@ import (
 	"github.com/tencentyun/proto-parse-tcaplus/tools"
 )
 
-//global variables
-//      "enums": []Enum,
-//		"msgs":   []Message,
-//		"imps":   []Import,
-//		"pkg":    Package,
-//		"syntax": Syntax,
-//		"opts":  []Option,
-
 type ProtoInfo struct {
 	enums  []Enum
 	msgs   []Message
@@ -51,19 +43,22 @@ var (
 	blobMessages = map[string][]string{}
 )
 
+//parse proto file and generate new proto file
 func ProtoParseAndWrite(srcPath string, dstPath string, ignores string) {
+	//traverse all proto files and parse them
 	err := traverseProtoFiles(srcPath, ignores)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+	//generate proto files with parsed results
 	err = writeProtoFiles(srcPath, ignores, dstPath)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	//output parse results
+	//output parse results for each proto file, SUCCESS or FAIL
 	err = outputParseResults(srcPath, ignores)
 	if err != nil {
 		fmt.Println(err)
@@ -71,13 +66,20 @@ func ProtoParseAndWrite(srcPath string, dstPath string, ignores string) {
 	}
 
 }
+
+/*
+* @param srcPath string : source path of proto files
+* @param ignores string : specify the proto files need to be ignored, comma sepeartes each proto file
+* @retval error
+ */
 func traverseProtoFiles(srcPath string, ignores string) error {
+	//get all proto files from source path, ignoring the proto files specfied by ignores
 	protoFiles, err := tools.GetProtoFiles(srcPath, ignores)
 	if err != nil {
 		return fmt.Errorf("get proto files error : %v", err)
 
 	}
-
+	//loop for proto files
 	for _, file := range protoFiles {
 		filename := path.Base(file)
 		//parse proto file and save results into protoInfo (global variable)
@@ -91,23 +93,27 @@ func traverseProtoFiles(srcPath string, ignores string) error {
 		protoInfo = ProtoInfo{}
 	}
 	//parse common proto, common.proto, enumm_entity.proto
-
 	for _, filename := range strings.Split(ignores, ",") {
+		filename = strings.TrimSpace(filename)
 		commfile := filepath.Join(srcPath, filename)
 		parse(commfile)
 		//add additional contents to protoInfo
 		protoInfo.imps = append(protoInfo.imps, Import{Path: comm.TcaplusImportName})
 		//map the protoInfo to relative proto file , and save  into protoInfos
 		//user can scan all parsed results of proto file from protoInfos with proto file name
+
 		protoInfos[filename] = protoInfo
 		//reset protoInfo for next proto file
 		protoInfo = ProtoInfo{}
 	}
+	//get parsed results of common.proto
 	if protoInfo, ok := protoInfos[comm.CommonProtoFile]; ok {
 		commonProtoInfo = protoInfo
 	} else {
 		return fmt.Errorf("parse common.proto fail, please check")
 	}
+	//get parsed results of enumm_entity.proto
+
 	if enumInfo, ok := protoInfos[comm.EnumProtoFile]; ok {
 		enummProtoInfo = enumInfo
 	} else {
@@ -116,6 +122,7 @@ func traverseProtoFiles(srcPath string, ignores string) error {
 	return nil
 }
 
+//generate proto files, ignore generating common.proto and enumm_entity.proto
 func writeProtoFiles(srcPath string, ignores string, dstPath string) error {
 	protoFiles, err := tools.GetProtoFiles(srcPath, ignores)
 	if err != nil {
@@ -124,9 +131,12 @@ func writeProtoFiles(srcPath string, ignores string, dstPath string) error {
 	for _, file := range protoFiles {
 		filename := path.Base(file)
 		dstFile := filepath.Join(dstPath, filename)
+		//put parse results into bytes.Buffer
 		writeProtoFile(dstFile)
+		//generate proto file
 		err := tools.WriteFile(dstFile, buf.Bytes())
 		if err != nil {
+			//identify parsing error and save it
 			errorInfos[file] = fmt.Sprintf("[%v] convert [FAIL][%v]", file, err.Error())
 		}
 		//reset to empty for next proto file
@@ -156,6 +166,7 @@ func writeProtoFiles(srcPath string, ignores string, dstPath string) error {
 	return nil
 }
 
+//output results for checking whether the parsing is ok or not
 func outputParseResults(srcPath string, ignores string) error {
 	protoFiles, err := tools.GetProtoFiles(srcPath, ignores)
 	if err != nil {
@@ -175,14 +186,15 @@ func outputParseResults(srcPath string, ignores string) error {
 	return nil
 }
 
+//parse proto file
 func parse(protoSrcFile string) {
 
 	reader, _ := os.Open(protoSrcFile)
 	defer reader.Close()
-
+	//parse the proto syntax tree
 	parser := proto.NewParser(reader)
 	definition, _ := parser.Parse()
-
+	//walk the proto file
 	proto.Walk(definition,
 		protoWithSyntax(handleSyntax),
 		proto.WithImport(handleImport),
@@ -194,6 +206,7 @@ func parse(protoSrcFile string) {
 
 }
 
+//put parse results into bytes.Buffer
 func writeProtoFile(protoDstPath string) {
 	filename := path.Base(protoDstPath)
 	info, ok := protoInfos[filename]
@@ -218,6 +231,10 @@ func writeProtoFile(protoDstPath string) {
 	if err != nil {
 		errorInfos[filename] = err.Error()
 	}
+	//write temp enums which are defined in common.proto or enumm_entity.proto
+	writeTempEnums(tempEnumInfos)
+	//reset tempEnumInfos for next proto info
+	tempEnumInfos = []Enum{}
 }
 
 func protoWithSyntax(apply func(p *proto.Syntax)) proto.Handler {
@@ -382,6 +399,12 @@ func writeEnums(info ProtoInfo) {
 	}
 
 	for _, e := range info.enums {
+		writeEnum(e)
+	}
+
+}
+func writeTempEnums(es []Enum) {
+	for _, e := range es {
 		writeEnum(e)
 	}
 

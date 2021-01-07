@@ -24,6 +24,7 @@ message OUT_BattlePass {
     DATA_MAP_UINT32 rewardStatus = 16;
     DATA_MAP_UINT32 advanceRewardStatus = 17;
     EnumTest enumTest = 18;
+    ComEnum comEnum = 19;
 }
 
 message BattlePassTaskList {
