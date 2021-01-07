@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/emicklei/proto"
+	"github.com/tencentyun/proto-parse-tcaplus/comm"
 	"github.com/tencentyun/proto-parse-tcaplus/tools"
 )
 
@@ -45,7 +46,8 @@ var (
 	//save temp message results for writing
 	tempMsgInfos []Message
 	//save errors for each proto file
-	errorInfos   = map[string]string{}
+	errorInfos = map[string]string{}
+	//save blob IN and OUT messages
 	blobMessages = map[string][]string{}
 )
 
@@ -60,6 +62,14 @@ func ProtoParseAndWrite(srcPath string, dstPath string, ignores string) {
 		fmt.Println(err)
 		return
 	}
+
+	//output parse results
+	err = outputParseResults(srcPath, ignores)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 }
 func traverseProtoFiles(srcPath string, ignores string) error {
 	protoFiles, err := tools.GetProtoFiles(srcPath, ignores)
@@ -73,7 +83,7 @@ func traverseProtoFiles(srcPath string, ignores string) error {
 		//parse proto file and save results into protoInfo (global variable)
 		parse(file)
 		//add additional contents to protoInfo
-		protoInfo.imps = append(protoInfo.imps, Import{Path: TcaplusImportName})
+		protoInfo.imps = append(protoInfo.imps, Import{Path: comm.TcaplusImportName})
 		//map the protoInfo to relative proto file , and save  into protoInfos
 		//user can scan all parsed results of proto file from protoInfos with proto file name
 		protoInfos[filename] = protoInfo
@@ -86,19 +96,19 @@ func traverseProtoFiles(srcPath string, ignores string) error {
 		commfile := filepath.Join(srcPath, filename)
 		parse(commfile)
 		//add additional contents to protoInfo
-		protoInfo.imps = append(protoInfo.imps, Import{Path: TcaplusImportName})
+		protoInfo.imps = append(protoInfo.imps, Import{Path: comm.TcaplusImportName})
 		//map the protoInfo to relative proto file , and save  into protoInfos
 		//user can scan all parsed results of proto file from protoInfos with proto file name
 		protoInfos[filename] = protoInfo
 		//reset protoInfo for next proto file
 		protoInfo = ProtoInfo{}
 	}
-	if protoInfo, ok := protoInfos[CommonProtoFile]; ok {
+	if protoInfo, ok := protoInfos[comm.CommonProtoFile]; ok {
 		commonProtoInfo = protoInfo
 	} else {
 		return fmt.Errorf("parse common.proto fail, please check")
 	}
-	if enumInfo, ok := protoInfos[EnumProtoFile]; ok {
+	if enumInfo, ok := protoInfos[comm.EnumProtoFile]; ok {
 		enummProtoInfo = enumInfo
 	} else {
 		return fmt.Errorf("parse enumm_entity.proto fail, please check")
@@ -117,24 +127,52 @@ func writeProtoFiles(srcPath string, ignores string, dstPath string) error {
 		writeProtoFile(dstFile)
 		err := tools.WriteFile(dstFile, buf.Bytes())
 		if err != nil {
-			return err
+			errorInfos[file] = fmt.Sprintf("[%v] convert [FAIL][%v]", file, err.Error())
 		}
 		//reset to empty for next proto file
 		buf.Reset()
 	}
-	outputParseResults(protoFiles)
+	//write BLOB messages to specified message (blob_user_data_out, blob_user_data_in)
+	for msgType, file := range comm.BlobFiles {
+		msgs, ok := blobMessages[msgType]
+		if !ok {
+			errorInfos[file] = fmt.Sprintf("no %v blob messages", msgType)
+		} else {
+			err := writeBlobMessages(msgType, msgs)
+			if err != nil {
+				errorInfos[file] = fmt.Sprintf("[%v] convert [FAIL][%v]", file, err.Error())
+			}
+			dstFile := filepath.Join(dstPath, file)
+			err = tools.WriteFile(dstFile, buf.Bytes())
+			if err != nil {
+				errorInfos[file] = fmt.Sprintf("[%v] convert [FAIL][%v]", file, err.Error())
+			}
+		}
+
+		//reset to empty for next proto file
+		buf.Reset()
+	}
+
 	return nil
 }
 
-func outputParseResults(protoFiles []string) {
+func outputParseResults(srcPath string, ignores string) error {
+	protoFiles, err := tools.GetProtoFiles(srcPath, ignores)
+	if err != nil {
+		return fmt.Errorf("get proto files error : %v", err)
+
+	}
+	protoFiles = append(protoFiles, comm.BlobFiles["IN"])
+	protoFiles = append(protoFiles, comm.BlobFiles["OUT"])
 	for _, file := range protoFiles {
 		filename := path.Base(file)
 		if err, ok := errorInfos[filename]; ok {
-			fmt.Println(fmt.Sprintf("[%v] convert [FAIL][%v]\n", filename, err))
+			fmt.Println(fmt.Sprintf("[%v] convert [FAIL][%v]", filename, err))
 		} else {
 			fmt.Println(fmt.Sprintf("[%v] convert [SUCCESS]", filename))
 		}
 	}
+	return nil
 }
 
 func parse(protoSrcFile string) {
@@ -158,9 +196,13 @@ func parse(protoSrcFile string) {
 
 func writeProtoFile(protoDstPath string) {
 	filename := path.Base(protoDstPath)
-	info := protoInfos[filename]
+	info, ok := protoInfos[filename]
+	if !ok {
+		errorInfos[filename] = "no parse infos"
+		return
+	}
 	//write syntax
-	buf.WriteString(fmt.Sprintf("syntax = %s;\n", info.syntax.Name))
+	buf.WriteString(fmt.Sprintf("syntax = \"%s\";\n", info.syntax.Name))
 	//write package
 	buf.WriteString(fmt.Sprintf("package  %s;\n", info.pkg.Name))
 
@@ -172,13 +214,10 @@ func writeProtoFile(protoDstPath string) {
 	//write message, distinguish different message type, BLOB, IN, OUT and PUB
 	//BLOB: save to map object first , then call writeBlobMessages to write file
 	//IN, OUT, PUB:  write file directly
-	writeMessages(info)
-	//write BLOB messages to specified message (blob_user_data_out, blob_user_data_in)
-	err := writeBlobMessages(blobMessages)
+	err := writeMessages(info)
 	if err != nil {
 		errorInfos[filename] = err.Error()
 	}
-
 }
 
 func protoWithSyntax(apply func(p *proto.Syntax)) proto.Handler {
@@ -192,16 +231,22 @@ func handleSyntax(s *proto.Syntax) {
 	protoInfo.syntax.Name = s.Value
 }
 func handleImport(im *proto.Import) {
+	//ignore general imports
+
 	imp := Import{
 		Path: im.Filename,
 	}
+	for _, ignorePath := range comm.IgnoreImportPaths {
+		if im.Filename == ignorePath {
+			return
+		}
+	}
 	protoInfo.imps = append(protoInfo.imps, imp)
-
 }
 
 func handlePackage(p *proto.Package) {
 	protoInfo.pkg = Package{
-		Name: TcaplusPackageName,
+		Name: comm.TcaplusPackageName,
 	}
 }
 
@@ -322,7 +367,7 @@ func parseMessage(m *proto.Message) Message {
 
 func writeImports(info ProtoInfo) {
 	if len(info.imps) == 0 {
-		fmt.Println("no import need to be written")
+		//fmt.Println("no import need to be written")
 		return
 	}
 	for _, i := range info.imps {
@@ -332,7 +377,7 @@ func writeImports(info ProtoInfo) {
 
 func writeEnums(info ProtoInfo) {
 	if len(info.enums) == 0 {
-		fmt.Println("no enum need to be written")
+		//fmt.Println("no enum need to be written")
 		return
 	}
 
@@ -351,13 +396,14 @@ func writeEnum(e Enum) {
 
 func writeMessages(info ProtoInfo) error {
 	if len(info.msgs) == 0 {
-		fmt.Println("no message need to be written")
+		//fmt.Println("no message need to be written")
 		return nil
 	}
 
 	for _, msg := range info.msgs {
 		newName := tools.SnakeCase(msg.Name)
 		if blobType, ok := isBlobMessageType(msg); ok {
+
 			blobMessages[blobType] = append(blobMessages[blobType], newName)
 		} else {
 			err := writeMessage(msg, info)
@@ -370,8 +416,7 @@ func writeMessages(info ProtoInfo) error {
 }
 func writeMessage(m Message, info ProtoInfo) error {
 	msgType := ""
-	newName := tools.SnakeCase(m.Name)
-	buf.WriteString(fmt.Sprintf("message %s{\n", newName))
+
 	if ok := isBaseMessageType(m); ok {
 		msgType = "BASE"
 		err := writeBaseMessage(m, msgType, info)
@@ -389,12 +434,14 @@ func writeMessage(m Message, info ProtoInfo) error {
 			return err
 		}
 	}
-	buf.WriteString("}\n")
+
 	return nil
 }
 
 func writeBaseMessage(msg Message, msgType string, info ProtoInfo) error {
-	if pk, ok := FixTableMap[msg.Name]; ok {
+	if pk, ok := comm.FixTableMap[msg.Name]; ok {
+		newName := tools.SnakeCase(msg.Name)
+		buf.WriteString(fmt.Sprintf("message %s{\n", newName))
 		optStr := fmt.Sprintf("\toption(tcaplusservice.tcaplus_primary_key) = \"%s\";\n", pk)
 		buf.WriteString(optStr)
 	} else {
@@ -403,9 +450,12 @@ func writeBaseMessage(msg Message, msgType string, info ProtoInfo) error {
 	if err := writeMessageBody(msg, msgType, info); err != nil {
 		return err
 	}
+	buf.WriteString("}\n")
 	return nil
 }
 func writeInOrOutMessage(msg Message, msgType string, info ProtoInfo) error {
+	newName := tools.SnakeCase(msg.Name)
+	buf.WriteString(fmt.Sprintf("message %s{\n", newName))
 	optStr := fmt.Sprintf("\toption(tcaplusservice.tcaplus_primary_key) = \"uuid\";\n")
 	buf.WriteString(optStr)
 	optStr = fmt.Sprintf("\toption(tcaplusservice.tcaplus_index) = \"index_1(uid)\";\n")
@@ -413,35 +463,42 @@ func writeInOrOutMessage(msg Message, msgType string, info ProtoInfo) error {
 	if err := writeMessageBody(msg, msgType, info); err != nil {
 		return err
 	}
+	buf.WriteString("}\n")
 	return nil
 }
 func writePubMessage(msg Message, msgType string, info ProtoInfo) error {
+	newName := tools.SnakeCase(msg.Name)
+	buf.WriteString(fmt.Sprintf("message %s{\n", newName))
 	optStr := fmt.Sprintf("\toption(tcaplusservice.tcaplus_primary_key) = \"uuid\";\n")
 	buf.WriteString(optStr)
 	if err := writeMessageBody(msg, msgType, info); err != nil {
 		return err
 	}
+	buf.WriteString("}\n")
 	return nil
 }
-func writeBlobMessages(msgs map[string][]string) error {
-	if outMsgs, ok := msgs["OUT"]; ok {
-		buf.WriteString(fmt.Sprintf("message %v { \n", BlobUserOutMsg))
+func writeBlobMessages(msgType string, msgs []string) error {
+	buf.WriteString("syntax = proto3;\n")
+	buf.WriteString(fmt.Sprintf("package %v;\n", comm.TcaplusPackageName))
+	buf.WriteString(fmt.Sprintf("import \"%s\";\n", comm.TcaplusImportName))
+	if msgType == "OUT" {
+		buf.WriteString(fmt.Sprintf("message %v { \n", comm.BlobUserOutMsg))
 		optStr := fmt.Sprintf("\toption(tcaplusservice.tcaplus_primary_key) = \"uid\";\n")
 		buf.WriteString(optStr)
 		buf.WriteString(fmt.Sprintf("\tuint64 uid = 1;\n\tuint64 update_time = 2;\n"))
 		seqId := 3
-		for _, oms := range outMsgs {
+		for _, oms := range msgs {
 			buf.WriteString(fmt.Sprintf("\tbytes %v = %d;\n", oms, seqId))
 			seqId = seqId + 1
 		}
 		buf.WriteString("}\n")
-	} else if inMsgs, ok := msgs["IN"]; ok {
-		buf.WriteString(fmt.Sprintf("message %v { \n", BlobUserInMsg))
+	} else if msgType == "IN" {
+		buf.WriteString(fmt.Sprintf("message %v { \n", comm.BlobUserInMsg))
 		optStr := fmt.Sprintf("\toption(tcaplusservice.tcaplus_primary_key) = \"uid\";\n")
 		buf.WriteString(optStr)
 		buf.WriteString(fmt.Sprintf("\tuint64 uid = 1;\n\tuint64 update_time = 2;\n"))
 		seqId := 3
-		for _, ims := range inMsgs {
+		for _, ims := range msgs {
 			buf.WriteString(fmt.Sprintf("\tbytes %v = %d;\n", ims, seqId))
 			seqId = seqId + 1
 		}
@@ -452,6 +509,10 @@ func writeBlobMessages(msgs map[string][]string) error {
 
 func writeMessageBody(msg Message, msgType string, info ProtoInfo) error {
 	seqIncr := 0
+	if msgType == "BASE" {
+		//if message is base message, the start sequence id need decrease 1 because of getting rid of EntityType field
+		seqIncr = -1
+	}
 	for _, field := range msg.Fields {
 		fieldStr := ""
 
@@ -493,6 +554,9 @@ func writeMessageBody(msg Message, msgType string, info ProtoInfo) error {
 			//nested message field, defined in current message, convert to bytes
 			newId := field.ID + seqIncr
 			fieldStr = fmt.Sprintf("\t%vbytes %v = %v;\n", fieldStr, field.Name, newId)
+		} else {
+			newId := field.ID + seqIncr
+			fieldStr = fmt.Sprintf("\t%v%v %v = %v;\n", fieldStr, field.Type, field.Name, newId)
 		}
 
 		buf.WriteString(fieldStr)
@@ -563,7 +627,7 @@ func isNestedMessage(name string, msg Message) bool {
 func isBaseMessageType(msg Message) bool {
 	//check base type (such account, role,etc.)
 	//check base type
-	for _, bs := range FixTables {
+	for _, bs := range comm.FixTables {
 		if msg.Name == bs {
 			return true
 		}
@@ -615,13 +679,13 @@ func isPubMessageType(msg Message) (string, bool) {
 func checkMessageFlag(msg Message) int {
 	flag := 0
 	for _, field := range msg.Fields {
-		if field.Name == "EntityType" {
+		if field.Type == "EntityType" {
 			flag = 1
 			continue
 		}
 		if field.Name == "UUID" {
 			flag = flag + 1
-			continue
+			break
 		}
 	}
 	return flag

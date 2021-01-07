@@ -1,10 +1,20 @@
 syntax = "proto3";
 import "proto/entity/common.proto";
 import "proto/entity/enumm_entity.proto";
-
+import "enum_test.proto";
 package entity;
 
 message OUT_ChaosBattle {
+    EntityType 	dType       = 1; //实体类型
+    uint32 killNum          = 3; //玩家总击杀数
+    uint32 deadNum          = 4; //玩家总死亡数
+    uint32 curLevel         = 5; //当前所在层数
+    uint32 score            = 6; //当前积分
+    uint32 continueKill     = 7; //当前连杀数量
+    uint32 curRank          = 8; //当前排名
+    bool waitEnterNextFloor = 9; //等待进入下一层
+}
+message IN_ChaosBattle {
     EntityType 	dType       = 1; //实体类型
     uint32 killNum          = 3; //玩家总击杀数
     uint32 deadNum          = 4; //玩家总死亡数
@@ -18,6 +28,6 @@ message OUT_ChaosBattle {
 message PUB_ChaosBattle{
     EntityType 	dType  = 1;  //实体类型
     uint64 UUID        = 2; //实体唯一UUID
-    DATA_MAP_LUU users = 3; 
+    DATA_MAP_LUU users = 3;
     uint64 winner      = 4; //上届冠军的uid
 }

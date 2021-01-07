@@ -19,7 +19,7 @@ func CreateDir(path string) error {
 			return fmt.Errorf("%s create error: %v", path, err)
 		}
 	}
-
+	fi, _ = os.Stat(path)
 	if !fi.IsDir() {
 		return fmt.Errorf("%s is not directory", path)
 	}

@@ -1,7 +1,7 @@
 syntax = "proto3";
 import "proto/entity/common.proto";
 import "proto/entity/enumm_entity.proto";
-
+import "enum_test.proto";
 package entity;
 
 //battle pass entity
@@ -23,6 +23,7 @@ message OUT_BattlePass {
     uint32 expiredTime=15;
     DATA_MAP_UINT32 rewardStatus = 16;
     DATA_MAP_UINT32 advanceRewardStatus = 17;
+    EnumTest enumTest = 18;
 }
 
 message BattlePassTaskList {

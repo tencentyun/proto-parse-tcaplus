@@ -15,3 +15,8 @@ message OUT_Pet {
 	uint32 buffID     = 8; //最新的buffID
 	PetList list      = 9; //宠物激活列表
 }
+
+message PetList {
+	string name = 1;
+	int32 age = 2;
+}

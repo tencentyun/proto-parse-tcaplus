@@ -1,0 +1,28 @@
+syntax                          = "proto3";
+// 实体枚举定义，一旦定义，绝对不能修改，否则将导致实体生成和使用无法匹配
+package entity;
+
+enum EntityType {
+	ET_None                    	 = 0; //实体枚举开始
+	// 玩家对内实体 1000以内
+	ET_IN_User                   = 1;
+	ET_IN_Arena                  = 2;
+	ET_IN_Behavior               = 3;
+	ET_IN_ChatInfo               = 4;
+
+	ET_IN_Resource				 = 32;
+	// 玩家对外实体 1000开始
+	ET_OUT_AdvancedRoom              = 1001;
+	ET_OUT_Amulet                    = 1002;
+	ET_OUT_User                      = 1003;
+
+	ET_OUT_UserModuleShow            = 1132; //OUT_User拆分
+
+	// 公共实体 10000 开始
+	ET_PUB_AuctionItemBaseInfo        = 10001;
+	ET_PUB_AuctionItemExtendInfo      = 10002;
+	ET_PUB_AuctionLog                 = 10003;
+	ET_PUB_RoleAuctionFocused         = 10004;
+
+	ET_PUB_LadderWarmUp               = 10056;
+}

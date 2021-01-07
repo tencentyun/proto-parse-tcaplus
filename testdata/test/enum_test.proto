@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package entity;
+
+import "google/protobuf/descriptor.proto";
+
+enum EnumTest {
+    FieldA = 1;
+    FieldB = 2;
+    FieldC = 3;
+}

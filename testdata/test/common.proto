@@ -1,0 +1,156 @@
+syntax = "proto3";
+
+import "proto/entity/enumm.proto";
+import "proto/entity/enumm_entity.proto";
+
+package entity;
+
+// 基础消息体 map<uint64, bool>
+message DATA_MAP_LUBOOL {
+    map<uint64, bool> value = 1;
+}
+
+// 基础消息体 map<uint64, uint32>
+message DATA_MAP_LUU {
+	map<uint64, uint32> value = 1;
+}
+
+// 基础消息体 map<uint64,uint64>
+message DATA_MAP_UINT64 {
+	map<uint64,uint64> value = 1;
+}
+
+// 基础消息体 map<uint32,uint64>
+message DATA_MAP_UINT3264 {
+	map<uint32,uint64> value = 1;
+}
+
+// 基础消息体 map<uint32,uint32>
+message DATA_MAP_UINT32 {
+	map<uint32,uint32> value = 1;
+}
+
+// 基础消息体 map<uint32,bool>
+message DATA_MAP_UINT32BOOL {
+	map<uint32,bool> value = 1;
+}
+
+// 基础消息体 map<string,string>
+message DATA_MAP_STRING {
+	map<string,string> value = 1;
+}
+
+// 基础消息体 string array
+message DATA_LIST_STRING {
+	repeated string value = 1;
+}
+
+// 基础消息体 uint64 array
+message DATA_LIST_UINT64 {
+	repeated uint64 value = 1;
+}
+
+// 基础消息体 uint32 array
+message DATA_LIST_UINT32 {
+	repeated uint32 value = 1;
+}
+
+// 基础消息体 bool array
+message DATA_LIST_BOOL {
+	repeated bool value = 1;
+}
+
+// 基础消息体 string
+message DATA_BASE_STRING {
+	string value = 1;
+}
+
+// 基础消息体 uint64
+message DATA_BASE_UINT64 {
+	uint64 value = 1;
+}
+
+// 基础消息体 int64
+message DATA_BASE_INT64 {
+	int64 value = 1;
+}
+
+// 基础消息体 uint32
+message DATA_BASE_UINT32 {
+	uint32 value = 1;
+}
+
+// 基础消息体 int32
+message DATA_BASE_INT32 {
+	int32 value = 1;
+}
+
+// 基础消息体 bool
+message DATA_BASE_BOOL {
+	bool value = 1;
+}
+
+// obj在场景中的坐标
+message WORLD_POS {
+	uint32 x = 1;
+	uint32 y = 2;
+	uint32 z = 3;
+}
+
+// 属性结构
+message DATA_ATTRIBUTE {
+	map<uint32, uint64> attrInfo = 1; //属性信息 属性ID => 属性值
+}
+// 功能结构
+message DATA_FUNCTION {
+	map<uint32,FuncState> funcInfo = 1; //功能ID => 功能开启信息 0 未开启 1 已开启 2 预告
+}
+
+// 货币资源结构
+message DATA_CURRENCY {
+	map<uint32,uint64> currencyInfo = 1; //货币资源类型 => 货币资源数量
+}
+
+// 技能结构
+message DATA_SKILL{
+	map<uint32,DATA_SKILL_BASE> skillInfo = 1; //技能ID => 技能基础信息
+}
+// 排行结构
+message DATA_RANK{
+    repeated DATA_RANK_BASE rankInfo = 1; //排行信息
+}
+
+// 奖励资源结构
+message DATA_RESOURCE {
+	DATA_CURRENCY currencyInfo       = 1; // 资源信息
+	repeated DATA_ITEM_BASE itemInfo = 2; // 道具信息
+}
+
+...
+
+// 公会信息摘要
+message GuildSummary {
+	uint64 guildId         = 1; //公会唯一GUID
+	string guildName       = 2; //公会名称
+	uint64 chairmanID      = 3; //族长唯一UID
+	string chairmanName    = 4; //族长名字
+	uint32 guildLevel      = 5; //公会等级
+	uint64 guildReputation = 6; //公会活跃度
+	uint32 memberNum       = 7; //成员数量
+	GuildBadge badge       = 8; //族徽
+	string serverTitle     = 9; //服务器名
+}
+
+// 榜单数据详情 - 场景使用 TODO 改为通用
+message RankInfo {
+	string name        = 1; // 名称
+	uint64 score       = 2; // 分数
+	RankType rankType  = 3; // 榜单类型
+	uint64 uid         = 4; // 唯一ID
+	uint32 career      = 5; // 职业
+	uint32 level       = 6; // 等级
+	uint32 vip         = 7; // 角色VIP等级
+	uint32 promotionID = 8; // 转职等级
+	string serverTitle = 9; // 服务器标识
+}
+
