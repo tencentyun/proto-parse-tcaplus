@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -42,7 +43,7 @@ func TestParseCfg(t *testing.T) {
 	assert.Equal(t, "common.proto, enumm_entity.proto", comm.IgnoreProtoFiles)
 	assert.Equal(t, "common.proto", comm.CommonProtoFile)
 	assert.Equal(t, "enumm_entity.proto", comm.EnumProtoFile)
-	assert.Equal(t, "proto/entity/common.proto, proto/entity/enumm_entity.proto", comm.IgnoreImportPaths)
+	assert.Equal(t, "proto/entity/common.proto,proto/entity/enumm_entity.proto", strings.Join(comm.IgnoreImportPaths, ","))
 	assert.Equal(t, "tcaplus_entity", comm.TcaplusPackageName)
 	assert.Equal(t, "tcaplusservice.optionv1.proto", comm.TcaplusImportName)
 
