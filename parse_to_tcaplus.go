@@ -424,10 +424,10 @@ func writeMessages(info ProtoInfo) error {
 	}
 
 	for _, msg := range info.msgs {
-		newName := tools.SnakeCase(msg.Name)
+		//newName := tools.SnakeCase(msg.Name)
 		if blobType, ok := isBlobMessageType(msg); ok {
 
-			blobMessages[blobType] = append(blobMessages[blobType], newName)
+			blobMessages[blobType] = append(blobMessages[blobType], msg.Name)
 		} else {
 			err := writeMessage(msg, info)
 			if err != nil {
@@ -463,8 +463,8 @@ func writeMessage(m Message, info ProtoInfo) error {
 
 func writeBaseMessage(msg Message, msgType string, info ProtoInfo) error {
 	if pk, ok := comm.FixTableMap[msg.Name]; ok {
-		newName := tools.SnakeCase(msg.Name)
-		buf.WriteString(fmt.Sprintf("message %s{\n", newName))
+		//	newName := tools.SnakeCase(msg.Name)
+		buf.WriteString(fmt.Sprintf("message %s{\n", msg.Name))
 		optStr := fmt.Sprintf("\toption(tcaplusservice.tcaplus_primary_key) = \"%s\";\n", pk)
 		buf.WriteString(optStr)
 	} else {
@@ -477,8 +477,8 @@ func writeBaseMessage(msg Message, msgType string, info ProtoInfo) error {
 	return nil
 }
 func writeInOrOutMessage(msg Message, msgType string, info ProtoInfo) error {
-	newName := tools.SnakeCase(msg.Name)
-	buf.WriteString(fmt.Sprintf("message %s{\n", newName))
+	// newName := tools.SnakeCase(msg.Name)
+	buf.WriteString(fmt.Sprintf("message %s{\n", msg.Name))
 	optStr := fmt.Sprintf("\toption(tcaplusservice.tcaplus_primary_key) = \"uuid\";\n")
 	buf.WriteString(optStr)
 	optStr = fmt.Sprintf("\toption(tcaplusservice.tcaplus_index) = \"index_1(uid)\";\n")
@@ -490,8 +490,8 @@ func writeInOrOutMessage(msg Message, msgType string, info ProtoInfo) error {
 	return nil
 }
 func writePubMessage(msg Message, msgType string, info ProtoInfo) error {
-	newName := tools.SnakeCase(msg.Name)
-	buf.WriteString(fmt.Sprintf("message %s{\n", newName))
+	//newName := tools.SnakeCase(msg.Name)
+	buf.WriteString(fmt.Sprintf("message %s{\n", msg.Name))
 	optStr := fmt.Sprintf("\toption(tcaplusservice.tcaplus_primary_key) = \"uuid\";\n")
 	buf.WriteString(optStr)
 	if err := writeMessageBody(msg, msgType, info); err != nil {
@@ -532,14 +532,14 @@ func writeBlobMessages(msgType string, msgs []string) error {
 
 func writeMessageBody(msg Message, msgType string, info ProtoInfo) error {
 	seqIncr := 0
-	if msgType == "BASE" {
-		//if message is base message, the start sequence id need decrease 1 because of getting rid of EntityType field
-		seqIncr = -1
-	}
 	for _, field := range msg.Fields {
 		fieldStr := ""
 
 		if field.Type == "EntityType" {
+			if msgType == "BASE" {
+				//if message is base message, the start sequence id need decrease 1 because of getting rid of EntityType field
+				seqIncr = -1
+			}
 			//skip EntityType field
 			continue
 		}
