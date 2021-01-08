@@ -479,7 +479,7 @@ func writeBaseMessage(msg Message, msgType string, info ProtoInfo) error {
 func writeInOrOutMessage(msg Message, msgType string, info ProtoInfo) error {
 	// newName := tools.SnakeCase(msg.Name)
 	buf.WriteString(fmt.Sprintf("message %s{\n", msg.Name))
-	optStr := fmt.Sprintf("\toption(tcaplusservice.tcaplus_primary_key) = \"uuid\";\n")
+	optStr := fmt.Sprintf("\toption(tcaplusservice.tcaplus_primary_key) = \"uuid,uid\";\n")
 	buf.WriteString(optStr)
 	optStr = fmt.Sprintf("\toption(tcaplusservice.tcaplus_index) = \"index_1(uid)\";\n")
 	buf.WriteString(optStr)
