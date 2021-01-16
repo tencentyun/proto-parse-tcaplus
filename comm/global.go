@@ -11,6 +11,12 @@ var (
 		"BaseAccounts":            "token",
 		"BaseRoles":               "role_id",
 	}
+	//table pub and split proto files
+	GlobalPubSplitProtoFiles = map[string]string{
+		"PUB": "table_pub_message.proto",
+		"OUT": "table_split_message.proto",
+		"IN":  "table_split_message.proto",
+	}
 	//blob proto files
 	GlobalBlobFiles = map[string]string{
 		"IN":  "blob_user_data_in.proto",
@@ -28,6 +34,8 @@ var (
 	FixTables []string
 	//base table primary keys map, read item `base_table_primary_keys` from config file, if not exist in config file, assigned by default `GlobalFixTableMap`
 	FixTableMap map[string]string
+	//pub and split proto files map, read item `pub_split_proto_files` from config file, if not exist in config file, assigned by default `GlobalPubSplitProtoFiles`
+	PubSplitFiles map[string]string
 	//blob proto files map, read item `blob_proto_files` from config file, if not exist in config file, assigned by default `GlobalBlobFiles`
 	BlobFiles map[string]string
 	//import paths for ignoring, read item `import_path_ignores` from config file, if not exist in config file, assigned by default `GlobalIgnoreImportPaths`
@@ -58,3 +66,59 @@ var (
 	//business common proto file, read item `proto_file_enum_name` from config file, if not exist in config, assigned by default
 	EnumProtoFile string = "enumm_entity.proto"
 )
+
+type Import struct {
+	Path string
+}
+
+type Package struct {
+	Name string
+}
+
+type Syntax struct {
+	Name string
+}
+
+type Option struct {
+	Name       string
+	Value      string
+	Aggregated []Option
+}
+
+type Message struct {
+	Name          string
+	Fields        []Field
+	Maps          []Map
+	ReservedIDs   []int
+	ReservedNames []string
+	Messages      []Message
+	Options       []Option
+	Enums         []Enum
+}
+
+type EnumField struct {
+	Name    string
+	Integer int
+	Options []Option
+}
+
+type Enum struct {
+	Name          string
+	EnumFields    []EnumField
+	ReservedIDs   []int
+	ReservedNames []string
+	AllowAlias    bool
+}
+
+type Map struct {
+	KeyType string `json:"key_type,omitempty"`
+	Field   Field
+}
+
+type Field struct {
+	ID         int
+	Name       string
+	Type       string
+	IsRepeated bool
+	Options    []Option
+}

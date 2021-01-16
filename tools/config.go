@@ -76,6 +76,31 @@ func ParseCfg(cfg *ini.File) error {
 		comm.FixTableMap = comm.GlobalFixTableMap
 	}
 
+	if ok := busSec.HasKey("pub_split_proto_files"); ok {
+		//parse config , get pub and split proto files
+		pubSplitProtoFiles := strings.Split(busSec.Key("pub_split_proto_files").Value(), ",")
+		for i := range pubSplitProtoFiles {
+			pubSplitProtoFiles[i] = strings.TrimSpace(pubSplitProtoFiles[i])
+			infos := strings.Split(pubSplitProtoFiles[i], ":")
+			for j := range infos {
+				infos[j] = strings.TrimSpace(infos[j])
+			}
+			msgType := infos[0]
+			if msgType == "" {
+				continue
+			}
+
+			if len(infos) > 0 {
+				filename := infos[1]
+				comm.PubSplitFiles[msgType] = filename
+			} else if val, ok := comm.GlobalPubSplitProtoFiles[msgType]; ok {
+				comm.PubSplitFiles[msgType] = val
+			}
+		}
+	} else {
+		comm.PubSplitFiles = comm.GlobalPubSplitProtoFiles
+	}
+
 	if ok := busSec.HasKey("blob_proto_files"); ok {
 		//parse config , get blob proto files
 		blobProtoFiles := strings.Split(busSec.Key("blob_proto_files").Value(), ",")
