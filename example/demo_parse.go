@@ -1,4 +1,4 @@
-package main
+package example
 
 import (
 	"bytes"
@@ -34,9 +34,9 @@ var (
 	//save parsed results of enumm_entity.proto
 	enummProtoInfo ProtoInfo
 	//save temp enum results for writing
-	tempEnumInfos []Enum
+	tempEnumInfos []comm.Enum
 	//save temp message results for writing
-	tempMsgInfos []Message
+	tempMsgInfos []comm.Message
 	//save errors for each proto file
 	errorInfos = map[string]string{}
 	//save blob IN and OUT messages
@@ -85,7 +85,7 @@ func traverseProtoFiles(srcPath string, ignores string) error {
 		//parse proto file and save results into protoInfo (global variable)
 		parse(file)
 		//add additional contents to protoInfo
-		protoInfo.imps = append(protoInfo.imps, Import{Path: comm.TcaplusImportName})
+		protoInfo.imps = append(protoInfo.imps, comm.Import{Path: comm.TcaplusImportName})
 		//map the protoInfo to relative proto file , and save  into protoInfos
 		//user can scan all parsed results of proto file from protoInfos with proto file name
 		protoInfos[filename] = protoInfo
@@ -98,7 +98,7 @@ func traverseProtoFiles(srcPath string, ignores string) error {
 		commfile := filepath.Join(srcPath, filename)
 		parse(commfile)
 		//add additional contents to protoInfo
-		protoInfo.imps = append(protoInfo.imps, Import{Path: comm.TcaplusImportName})
+		protoInfo.imps = append(protoInfo.imps, comm.Import{Path: comm.TcaplusImportName})
 		//map the protoInfo to relative proto file , and save  into protoInfos
 		//user can scan all parsed results of proto file from protoInfos with proto file name
 
@@ -234,7 +234,7 @@ func writeProtoFile(protoDstPath string) {
 	//write temp enums which are defined in common.proto or enumm_entity.proto
 	writeTempEnums(tempEnumInfos)
 	//reset tempEnumInfos for next proto info
-	tempEnumInfos = []Enum{}
+	tempEnumInfos = []comm.Enum{}
 }
 
 func protoWithSyntax(apply func(p *proto.Syntax)) proto.Handler {
@@ -250,7 +250,7 @@ func handleSyntax(s *proto.Syntax) {
 func handleImport(im *proto.Import) {
 	//ignore general imports
 
-	imp := Import{
+	imp := comm.Import{
 		Path: im.Filename,
 	}
 	for _, ignorePath := range comm.IgnoreImportPaths {
@@ -262,7 +262,7 @@ func handleImport(im *proto.Import) {
 }
 
 func handlePackage(p *proto.Package) {
-	protoInfo.pkg = Package{
+	protoInfo.pkg = comm.Package{
 		Name: comm.TcaplusPackageName,
 	}
 }
@@ -306,7 +306,7 @@ func parseEnum(e *proto.Enum) comm.Enum {
 		//handle enum field
 		if ef, ok := v.(*proto.EnumField); ok {
 
-			field := EnumField{
+			field := comm.EnumField{
 				Name:    ef.Name,
 				Integer: ef.Integer,
 			}
@@ -333,7 +333,7 @@ func parseMessage(m *proto.Message) comm.Message {
 			//not parse, meaningless for tcaplusdb
 		}
 		if f, ok := v.(*proto.NormalField); ok {
-			msg.Fields = append(msg.Fields, Field{
+			msg.Fields = append(msg.Fields, comm.Field{
 				ID:         f.Sequence,
 				Name:       f.Name,
 				Type:       f.Type,
@@ -342,9 +342,9 @@ func parseMessage(m *proto.Message) comm.Message {
 		}
 		if mmp, ok := v.(*proto.MapField); ok {
 			f := mmp.Field
-			msg.Maps = append(msg.Maps, Map{
+			msg.Maps = append(msg.Maps, comm.Map{
 				KeyType: mmp.KeyType,
-				Field: Field{
+				Field: comm.Field{
 					ID:         f.Sequence,
 					Name:       f.Name,
 					Type:       f.Type,
@@ -354,10 +354,10 @@ func parseMessage(m *proto.Message) comm.Message {
 		}
 
 		if moo, ok := v.(*proto.Oneof); ok {
-			var fields []Field
+			var fields []comm.Field
 			for _, el := range moo.Elements {
 				if f, ok := el.(*proto.OneOfField); ok {
-					fields = append(fields, Field{
+					fields = append(fields, comm.Field{
 						ID:         f.Sequence,
 						Name:       f.Name,
 						Type:       f.Type,
