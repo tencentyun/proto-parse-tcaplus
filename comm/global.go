@@ -2,20 +2,21 @@ package comm
 
 var (
 	//default base tables
-	GlobalFixTables = [...]string{"BaseVersion", "BaseGUID", "BaseSelfIncrementIDData", "BaseAccounts", "BaseRoles"}
+	GlobalBaseTables = [...]string{"BaseVersion", "BaseGUID", "BaseSelfIncrementIDData", "BaseAccounts", "BaseRoles"}
 	//default base table primary keys
-	GlobalFixTableMap = map[string]string{
+	GlobalBaseTableMap = map[string]string{
 		"BaseVersion":             "version",
 		"BaseGUID":                "guid",
 		"BaseSelfIncrementIDData": "id",
 		"BaseAccounts":            "token",
 		"BaseRoles":               "role_id",
 	}
-	//table pub and split proto files
-	GlobalPubSplitProtoFiles = map[string]string{
-		"PUB": "table_pub_message.proto",
-		"OUT": "table_split_message.proto",
-		"IN":  "table_split_message.proto",
+	//table base, pub and split proto files
+	GlobalTableFiles = map[string]string{
+		"BASE": "base.proto",
+		"PUB":  "table_pub_message.proto",
+		"OUT":  "table_split_message.proto",
+		"IN":   "table_split_message.proto",
 	}
 	//blob proto files
 	GlobalBlobFiles = map[string]string{
@@ -30,12 +31,12 @@ var (
 )
 var (
 	//business variables
-	//base tables, read item `base_tables` from config file , if not exist in config file, assigned by default `GlobalFixTables`
-	FixTables []string
-	//base table primary keys map, read item `base_table_primary_keys` from config file, if not exist in config file, assigned by default `GlobalFixTableMap`
-	FixTableMap map[string]string
-	//pub and split proto files map, read item `pub_split_proto_files` from config file, if not exist in config file, assigned by default `GlobalPubSplitProtoFiles`
-	PubSplitFiles map[string]string
+	//base tables, read item `base_tables` from config file , if not exist in config file, assigned by default `GlobalBaseTables`
+	BaseTables []string
+	//base table primary keys map, read item `base_table_primary_keys` from config file, if not exist in config file, assigned by default `GlobalBaseTableMap`
+	BaseTableMap map[string]string
+	//base, pub and split proto files map, read item `pub_split_proto_files` from config file, if not exist in config file, assigned by default `GlobalPubSplitProtoFiles`
+	TableFiles map[string]string
 	//blob proto files map, read item `blob_proto_files` from config file, if not exist in config file, assigned by default `GlobalBlobFiles`
 	BlobFiles map[string]string
 	//import paths for ignoring, read item `import_path_ignores` from config file, if not exist in config file, assigned by default `GlobalIgnoreImportPaths`
@@ -60,11 +61,10 @@ var (
 	//blob message name, read item `blob_user_out_msg_name` from config file, if not exist in config, assigned by default
 	BlobUserOutMsg string = "blob_user_data_out"
 	//specifiy proto files for ignoring parsing, read item `proto_file_ignores` from config file, if not exist in config, assigned by default
-	IgnoreProtoFiles string = "common.proto,enumm_entity.proto"
-	//business common proto file, read item `proto_file_common_name` from config file, if not exist in config, assigned by default
+	IgnoreProtoFiles string = ""
+
 	CommonProtoFile string = "common.proto"
-	//business common proto file, read item `proto_file_enum_name` from config file, if not exist in config, assigned by default
-	EnumProtoFile string = "enumm_entity.proto"
+	EnumProtoFile   string = "enumm_entity.proto"
 )
 
 type Import struct {

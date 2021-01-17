@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package entity;
+
+import "google/protobuf/descriptor.proto";
+
+
+message BaseVersion {
+    EntityType 	dType       = 1; //实体类型
+    string version                = 2; //version id
+    UserRoleInfo roleInfo       	= 3; //账号角色列表
+    UserAccountInfo accountInfo 		= 4; //账号额外信息
+}
+

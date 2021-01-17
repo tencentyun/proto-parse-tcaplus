@@ -35,20 +35,21 @@ func ParseCfg(cfg *ini.File) error {
 	}
 
 	//init map object to avoid invalid address error
-	comm.FixTableMap = make(map[string]string)
+	comm.BaseTableMap = make(map[string]string)
 	comm.BlobFiles = make(map[string]string)
+	comm.TableFiles = make(map[string]string)
 
 	if ok := busSec.HasKey("base_tables"); ok {
 		//parse base tables
 		baseTables := strings.Split(busSec.Key("base_tables").Value(), ",")
 		for i := range baseTables {
 			baseTables[i] = strings.TrimSpace(baseTables[i])
-			comm.FixTables = append(comm.FixTables, baseTables[i])
+			comm.BaseTables = append(comm.BaseTables, baseTables[i])
 		}
 
 	} else {
 		//init default values
-		comm.FixTables = append(comm.FixTables, comm.GlobalFixTables[:]...)
+		comm.BaseTables = append(comm.BaseTables, comm.GlobalBaseTables[:]...)
 	}
 	if ok := busSec.HasKey("base_table_primary_keys"); ok {
 		//parse base table primary keys
@@ -66,22 +67,22 @@ func ParseCfg(cfg *ini.File) error {
 			}
 			if len(infos) > 1 {
 				pks := strings.Join(infos[1:], ",")
-				comm.FixTableMap[tableName] = pks
-			} else if val, ok := comm.GlobalFixTableMap[tableName]; ok {
-				comm.FixTableMap[tableName] = val
+				comm.BaseTableMap[tableName] = pks
+			} else if val, ok := comm.GlobalBaseTableMap[tableName]; ok {
+				comm.BaseTableMap[tableName] = val
 			}
 		}
 	} else {
 		//if no config item , assign default value
-		comm.FixTableMap = comm.GlobalFixTableMap
+		comm.BaseTableMap = comm.GlobalBaseTableMap
 	}
 
-	if ok := busSec.HasKey("pub_split_proto_files"); ok {
+	if ok := busSec.HasKey("table_proto_files"); ok {
 		//parse config , get pub and split proto files
-		pubSplitProtoFiles := strings.Split(busSec.Key("pub_split_proto_files").Value(), ",")
-		for i := range pubSplitProtoFiles {
-			pubSplitProtoFiles[i] = strings.TrimSpace(pubSplitProtoFiles[i])
-			infos := strings.Split(pubSplitProtoFiles[i], ":")
+		protoFiles := strings.Split(busSec.Key("table_proto_files").Value(), ",")
+		for i := range protoFiles {
+			protoFiles[i] = strings.TrimSpace(protoFiles[i])
+			infos := strings.Split(protoFiles[i], ":")
 			for j := range infos {
 				infos[j] = strings.TrimSpace(infos[j])
 			}
@@ -89,16 +90,15 @@ func ParseCfg(cfg *ini.File) error {
 			if msgType == "" {
 				continue
 			}
-
 			if len(infos) > 0 {
 				filename := infos[1]
-				comm.PubSplitFiles[msgType] = filename
-			} else if val, ok := comm.GlobalPubSplitProtoFiles[msgType]; ok {
-				comm.PubSplitFiles[msgType] = val
+				comm.TableFiles[msgType] = filename
+			} else if val, ok := comm.GlobalTableFiles[msgType]; ok {
+				comm.TableFiles[msgType] = val
 			}
 		}
 	} else {
-		comm.PubSplitFiles = comm.GlobalPubSplitProtoFiles
+		comm.TableFiles = comm.GlobalTableFiles
 	}
 
 	if ok := busSec.HasKey("blob_proto_files"); ok {
@@ -145,18 +145,7 @@ func ParseCfg(cfg *ini.File) error {
 			comm.IgnoreProtoFiles = ignores
 		}
 	}
-	if ok := busSec.HasKey("proto_file_common_name"); ok {
-		name := strings.TrimSpace(busSec.Key("proto_file_common_name").Value())
-		if name != "" {
-			comm.CommonProtoFile = name
-		}
-	}
-	if ok := busSec.HasKey("proto_file_enum_name"); ok {
-		name := strings.TrimSpace(busSec.Key("proto_file_enum_name").Value())
-		if name != "" {
-			comm.EnumProtoFile = name
-		}
-	}
+
 	if ok := busSec.HasKey("import_path_ignores"); ok {
 		ignores := strings.Split(busSec.Key("import_path_ignores").Value(), ",")
 		for i := range ignores {

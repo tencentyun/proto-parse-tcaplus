@@ -21,3 +21,5 @@ message UserAccountInfo {
     EntityType 	dType       = 1; //实体类型
     uint64 id			= 2;
 }
+
+

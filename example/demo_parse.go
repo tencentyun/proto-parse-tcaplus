@@ -462,7 +462,7 @@ func writeMessage(m comm.Message, info ProtoInfo) error {
 }
 
 func writeBaseMessage(msg comm.Message, msgType string, info ProtoInfo) error {
-	if pk, ok := comm.FixTableMap[msg.Name]; ok {
+	if pk, ok := comm.BaseTableMap[msg.Name]; ok {
 		//	newName := tools.SnakeCase(msg.Name)
 		buf.WriteString(fmt.Sprintf("message %s{\n", msg.Name))
 		optStr := fmt.Sprintf("\toption(tcaplusservice.tcaplus_primary_key) = \"%s\";\n", pk)
@@ -650,7 +650,7 @@ func isNestedMessage(name string, msg comm.Message) bool {
 func isBaseMessageType(msg comm.Message) bool {
 	//check base type (such account, role,etc.)
 	//check base type
-	for _, bs := range comm.FixTables {
+	for _, bs := range comm.BaseTables {
 		if msg.Name == bs {
 			return true
 		}
