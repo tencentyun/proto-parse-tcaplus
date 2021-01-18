@@ -49,6 +49,9 @@ var (
 
 	//temp variable for enum field, key: msgtype, value: enum list
 	tempEnums = map[string][]comm.Enum{}
+
+	//package name
+	GeneralPackageName string = "entity"
 )
 
 //parse proto file and generate new proto file
@@ -356,13 +359,14 @@ func writeBaseProtoFiles(dstPath string) {
 			errStr = fmt.Sprintf("%s;%s", errStr, err.Error())
 		}
 	}
-	//write nested enums
-	if es, ok := tempEnums["BASE"]; ok {
-		for _, e := range es {
-			writeEnum(e)
+	/*
+		//write nested enums
+		if es, ok := tempEnums["BASE"]; ok {
+			for _, e := range es {
+				writeEnum(e)
+			}
 		}
-	}
-
+	*/
 	err := tools.WriteFile(dstFile, buf.Bytes())
 	if err != nil {
 		errStr = fmt.Sprintf("%s;%s", errStr, err.Error())
@@ -388,12 +392,14 @@ func writeSplitProtoFiles(dstPath string) {
 			errStr = fmt.Sprintf("%s;%s", errStr, err.Error())
 		}
 	}
-	//write nested enums
-	if es, ok := tempEnums["SPLIT"]; ok {
-		for _, e := range es {
-			writeEnum(e)
+	/*
+		//write nested enums
+		if es, ok := tempEnums["SPLIT"]; ok {
+			for _, e := range es {
+				writeEnum(e)
+			}
 		}
-	}
+	*/
 	err := tools.WriteFile(dstFile, buf.Bytes())
 	if err != nil {
 		errStr = fmt.Sprintf("%s;%s", errStr, err.Error())
@@ -418,12 +424,14 @@ func writePubProtoFiles(dstPath string) {
 			errStr = fmt.Sprintf("%s;%s", errStr, err.Error())
 		}
 	}
-	//write nested enums
-	if es, ok := tempEnums["PUB"]; ok {
-		for _, e := range es {
-			writeEnum(e)
+	/*
+		//write nested enums
+		if es, ok := tempEnums["PUB"]; ok {
+			for _, e := range es {
+				writeEnum(e)
+			}
 		}
-	}
+	*/
 	err := tools.WriteFile(dstFile, buf.Bytes())
 	if err != nil {
 		errStr = fmt.Sprintf("%s;%s", errStr, err.Error())
@@ -562,8 +570,13 @@ func writeBlobMessages(msgType string, msgs []string) error {
 
 func writeMessageBody(msg comm.Message, msgType string) error {
 	seqIncr := 0
+	maxSeq := 0
 	for _, field := range msg.Fields {
 		fieldStr := ""
+
+		if msgType == "BASE" {
+			maxSeq = field.ID
+		}
 
 		if field.Type == "EntityType" {
 			if msgType == "BASE" {
@@ -589,12 +602,14 @@ func writeMessageBody(msg comm.Message, msgType string) error {
 		}
 		newId := field.ID + seqIncr
 		newName := strings.Title(field.Name)
-		if e, ok := isEnumInCommEnums(field.Type); ok {
+		if _, ok := isEnumInCommEnums(field.Type); ok {
 			//enum field, nested enums or defined in common proto file (enumm_entity.proto)
-
-			fieldStr = fmt.Sprintf("\t%v%v %v = %v;\n", fieldStr, field.Type, newName, newId)
+			//convert all enums to int32
+			fieldStr = fmt.Sprintf("\t%vint32 %v = %v;\n", fieldStr, newName, newId)
 			//add enum into temp list
-			checkAndAppendTempEnums(msgType, *e)
+			//checkAndAppendTempEnums(msgType, *e)
+		} else if ok := isNestedEnum(field.Type, msg); ok {
+			fieldStr = fmt.Sprintf("\t%vint32 %v = %v;\n", fieldStr, newName, newId)
 		} else if ok := isMessageInCommMessages(field.Type); ok {
 			//message (not base, pub, split, and blob message)
 			fieldStr = fmt.Sprintf("\t%vbytes %v = %v;\n", fieldStr, newName, newId)
@@ -608,6 +623,16 @@ func writeMessageBody(msg comm.Message, msgType string) error {
 		buf.WriteString(fieldStr)
 	}
 
+	//deal with base table rules
+	if msgType == "BASE" && maxSeq != 0 {
+		if msg.Name == "BaseAccounts" {
+			buf.WriteString(fmt.Sprintf("\tuint64 AddTime = %d;\n\tuint64 UpdateTime = %d;\n", maxSeq, maxSeq+1))
+		} else {
+			buf.WriteString(fmt.Sprintf("\tuint64 UpdateTime = %d;\n", maxSeq))
+		}
+
+	}
+
 	for _, mapf := range msg.Maps {
 		newId := mapf.Field.ID + seqIncr
 		newName := strings.Title(mapf.Field.Name)
@@ -617,6 +642,7 @@ func writeMessageBody(msg comm.Message, msgType string) error {
 		//deal nested enums
 		writeEnum(enumf)
 	}
+
 	/*
 			for _, msgf := range msg.Messages {
 		        //not deal, nested message will be converted to bytes,
@@ -647,10 +673,17 @@ func isEnumInCommEnums(name string) (*comm.Enum, bool) {
 	return nil, false
 }
 func isMessageInCommMessages(name string) bool {
+	replaceStr := fmt.Sprintf("%s.", GeneralPackageName)
 	for _, m := range commMessages {
 		if name == m.Name {
 			return true
 		}
+		//some field is message type with package prefix, such as: entity.WORD_POS postion=1;
+		newName := strings.TrimPrefix(name, replaceStr)
+		if newName == name {
+			return true
+		}
+
 	}
 
 	return false
@@ -662,13 +695,15 @@ func isNestedMessage(name string, msg comm.Message) bool {
 			return true
 		}
 	}
-	//message is nested in the same proto file or other common proto file
-	for _, m := range commMessages {
-		if name == m.Name {
+	return false
+}
+func isNestedEnum(name string, msg comm.Message) bool {
+	//enum is nested in current message
+	for _, e := range msg.Enums {
+		if name == e.Name {
 			return true
 		}
 	}
-
 	return false
 }
 
