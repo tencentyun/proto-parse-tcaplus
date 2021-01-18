@@ -665,9 +665,14 @@ func checkAndAppendTempEnums(msgType string, e comm.Enum) {
 	}
 }
 func isEnumInCommEnums(name string) (*comm.Enum, bool) {
+	replaceStr := fmt.Sprintf("%s.", GeneralPackageName)
 	for _, e := range commEnums {
 		if name == e.Name {
 			return &e, true
+		}
+		newName := strings.TrimPrefix(name, replaceStr)
+		if newName == e.Name {
+			return nil, true
 		}
 	}
 	return nil, false
@@ -680,7 +685,7 @@ func isMessageInCommMessages(name string) bool {
 		}
 		//some field is message type with package prefix, such as: entity.WORD_POS postion=1;
 		newName := strings.TrimPrefix(name, replaceStr)
-		if newName == name {
+		if newName == m.Name {
 			return true
 		}
 
