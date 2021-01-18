@@ -21,7 +21,7 @@ message OUT_BattlePass {
     uint32 funcId = 13;
     uint32 startTime=14;
     uint32 expiredTime=15;
-    DATA_MAP_UINT32 rewardStatus = 16;
+    entity.DATA_MAP_UINT32 rewardStatus = 16;
     DATA_MAP_UINT32 advanceRewardStatus = 17;
     EnumTest enumTest = 18;
     ComEnum comEnum = 19;

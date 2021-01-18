@@ -602,7 +602,10 @@ func writeMessageBody(msg comm.Message, msgType string) error {
 		}
 		newId := field.ID + seqIncr
 		newName := strings.Title(field.Name)
-		if _, ok := isEnumInCommEnums(field.Type); ok {
+
+		if ok := isProtoDataType(field.Type); ok {
+			fieldStr = fmt.Sprintf("\t%v%v %v = %v;\n", fieldStr, field.Type, newName, newId)
+		} else if _, ok := isEnumInCommEnums(field.Type); ok {
 			//enum field, nested enums or defined in common proto file (enumm_entity.proto)
 			//convert all enums to int32
 			fieldStr = fmt.Sprintf("\t%vint32 %v = %v;\n", fieldStr, newName, newId)
@@ -615,6 +618,12 @@ func writeMessageBody(msg comm.Message, msgType string) error {
 			fieldStr = fmt.Sprintf("\t%vbytes %v = %v;\n", fieldStr, newName, newId)
 		} else if ok := isNestedMessage(field.Type, msg); ok {
 			//nested message field, defined in current message, convert to bytes
+			fieldStr = fmt.Sprintf("\t%vbytes %v = %v;\n", fieldStr, newName, newId)
+		} else if ok := isMessageInSplitMessages(field.Type); ok {
+			//split message nested in pub message or base message
+			fieldStr = fmt.Sprintf("\t%vbytes %v = %v;\n", fieldStr, newName, newId)
+		} else if ok := isMessageInBlobMessages(field.Type); ok {
+			//blob message nested in pub message or base message
 			fieldStr = fmt.Sprintf("\t%vbytes %v = %v;\n", fieldStr, newName, newId)
 		} else {
 			fieldStr = fmt.Sprintf("\t%v%v %v = %v;\n", fieldStr, field.Type, newName, newId)
@@ -664,6 +673,15 @@ func checkAndAppendTempEnums(msgType string, e comm.Enum) {
 		tempEnums[msgType] = append(tempEnums[msgType], e)
 	}
 }
+
+func isProtoDataType(name string) bool {
+	for _, dtype := range comm.ProtoDataTypes {
+		if name == dtype {
+			return true
+		}
+	}
+	return false
+}
 func isEnumInCommEnums(name string) (*comm.Enum, bool) {
 	replaceStr := fmt.Sprintf("%s.", GeneralPackageName)
 	for _, e := range commEnums {
@@ -698,6 +716,48 @@ func isNestedMessage(name string, msg comm.Message) bool {
 	for _, m := range msg.Messages {
 		if name == m.Name {
 			return true
+		}
+	}
+	return false
+}
+func isMessageInSplitMessages(name string) bool {
+
+	replaceStr := fmt.Sprintf("%s.", GeneralPackageName)
+	for _, m := range splitMessages {
+		if name == m.Name {
+			return true
+		}
+		//some field is message type with package prefix, such as: entity.WORD_POS postion=1;
+		newName := strings.TrimPrefix(name, replaceStr)
+		if newName == m.Name {
+			return true
+		}
+
+	}
+
+	return false
+}
+func isMessageInBlobMessages(name string) bool {
+	replaceStr := fmt.Sprintf("%s.", GeneralPackageName)
+	if strings.HasPrefix(name, "IN_") {
+		newName := strings.TrimPrefix(name, replaceStr)
+		for _, bn := range blobMessages["IN"] {
+			if name == bn {
+				return true
+			}
+			if newName == bn {
+				return true
+			}
+		}
+	} else if strings.HasPrefix(name, "OUT_") {
+		newName := strings.TrimPrefix(name, replaceStr)
+		for _, bn := range blobMessages["OUT"] {
+			if name == bn {
+				return true
+			}
+			if newName == bn {
+				return true
+			}
 		}
 	}
 	return false

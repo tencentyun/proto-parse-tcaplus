@@ -65,6 +65,7 @@ var (
 
 	CommonProtoFile string = "common.proto"
 	EnumProtoFile   string = "enumm_entity.proto"
+	ProtoDataTypes         = []string{"int", "int32", "uint32", "int64", "uint64", "long", "bool", "double", "float", "string"}
 )
 
 type Import struct {

@@ -30,4 +30,5 @@ message PUB_ChaosBattle{
     uint64 UUID        = 2; //实体唯一UUID
     DATA_MAP_LUU users = 3;
     uint64 winner      = 4; //上届冠军的uid
+    IN_ChaosBattle inChaosBattle = 5;
 }
